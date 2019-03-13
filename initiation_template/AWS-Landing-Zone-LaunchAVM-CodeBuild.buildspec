@@ -1,0 +1,34 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - export current=`pwd`
+      - if [ -f manifest.yaml ];then export current=`pwd`;else if [ -f aws-landing-zone-configuration/manifest.yaml ]; then export current=`pwd`/aws-landing-zone-configuration;      else echo 'manifest.yaml does not exist at the root level of aws-landing-zone-configuration.zip or inside aws-landing-zone-configuration folder, please check the ZIP file'; exit 1;    fi; fi;
+      - apt-get update && apt-get upgrade -y
+      - apt-get install zip wget python-pip libyaml-dev -y
+      - which python && python --version
+      - which python3 && python3 --version
+      - which pip && pip --version
+      - pip install --upgrade pip==18.0
+      - pip install --upgrade setuptools
+      - pip install --upgrade virtualenv
+      - pip install --upgrade PyYAML
+      - pip install --upgrade yorm
+      - pip install --upgrade boto3
+      - pip install --upgrade pyyaml
+      - pip freeze
+  pre_build:
+    commands:
+      - cd $current
+      - echo 'Download the Launch AVM Code'
+      - aws s3 cp s3://solutions-reference/aws-landing-zone/v2.0.1/aws-landing-zone-launch-avm.zip $current
+      - unzip -o $current/aws-landing-zone-launch-avm.zip -d $current
+  build:
+    commands:
+      - echo 'Starting Launch AVM `date` in `pwd`'
+      - echo 'python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm'
+      - python3 launch_avm.py $log_level $wait_time $current/manifest.yaml $sm_arn_launch_avm
+      - echo 'Completed Launch AVM `date` in `pwd`'
+artifacts:
+  files:
+      - '**/*'
